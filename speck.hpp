@@ -1,4 +1,5 @@
 
+#include <cassert>
 #include <cstdint>
 #include <fstream>
 #include <map>
@@ -12,7 +13,7 @@ namespace speck{
 	struct speckage{
 		std::unordered_map<std::string, std::pair<uint64_t, uint64_t>> file_info;
 		void* data;
-		uint64_t data_size;
+		uint64_t data_size = 0;
 	};
 
 
@@ -47,13 +48,36 @@ namespace speck{
 	speckage readPackageFromFile(std::string filepath)
 	{
 		std::ifstream file (filepath);
+		speckage out;
+		if (file.bad()) return out;
 		uint64_t header_size;
 		file >> header_size;
-		while (true)
+		while (file.tellg()<= header_size)
 		{
+			std::vector<char> name;
+			char temp;
+			do
+			{
+				file.get(temp);
+				name.push_back(temp);
+			} while (temp);
+			std::string final_name = name.data();
+
+			uint64_t begin_offset;
+			file >> begin_offset;
+
+			uint64_t length;
+			file >> length;
+			out.data_size += length;
+
+			out.file_info[final_name] = std::pair(begin_offset, length);
 
 		}
-		return speckage();
+		assert(file.tellg()!= header_size);
+		out.data = malloc(out.data_size);
+		file.read(reinterpret_cast<char*>(out.data), out.data_size);
+
+		return out;
 	};
 
 	///
