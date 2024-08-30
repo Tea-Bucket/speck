@@ -4,6 +4,7 @@
 #include <map>
 
 #include <string>
+#include <cstring>
 #include <unordered_map>
 #include <vector>
 
@@ -15,7 +16,33 @@ namespace speck{
 	};
 
 
-	bool addFileToPackage(speckage& speckage, char* filepath);
+	bool addFileToPackage(speckage& speckage, const char* filepath)
+	{
+		std::ifstream file (filepath, std::ios::in|std::ios::binary|std::ios::ate);
+		if(!file){
+			//file failed to open
+			return false;
+		}
+		auto file_size = file.tellg();
+		file.seekg(0, std::ios::beg);
+
+		void* next_data = malloc(speckage.data_size + file_size);
+
+		std::memcpy(next_data, speckage.data, speckage.data_size);
+
+		file.read(reinterpret_cast<char*>(next_data) + speckage.data_size, file_size);
+
+		if(file.fail()){
+			//io error
+			free(next_data);
+			return false;
+		}
+
+		free(speckage.data);
+		speckage.data_size += file_size;
+		speckage.data = next_data;
+		return true;
+	}
 	bool savePackageToFile(const speckage& toSave, char* filepath);
 	speckage readPackageFromFile(std::string filepath)
 	{
