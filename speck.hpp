@@ -40,6 +40,8 @@ namespace speck{
 			return false;
 		}
 
+		speckage.file_info[std::string(filepath)] = std::make_pair(speckage.data_size, file_size);
+
 		file.close();
 		if (speckage.data_size>0)
 			free(speckage.data);
