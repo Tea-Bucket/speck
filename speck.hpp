@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstdint>
 #include <fstream>
+#include <iomanip>
 #include <map>
 
 #include <string>
@@ -62,7 +63,8 @@ namespace speck{
 		}
 
 		std::ofstream file(filepath, std::ios::out|std::ios::binary|std::ios::trunc);
-		file << header_size;
+		file << std::setfill('0');
+		file << std::setw(64) << header_size;
 		for(const auto& info : toSave.file_info)
 		{
 			for(const auto& character : info.first)
@@ -71,9 +73,9 @@ namespace speck{
 			}
 			file << '\0';
 			//position
-			file << info.second.first;
+			file << std::setw(64) << info.second.first;
 			//size
-			file << info.second.second;
+			file << std::setw(64) << info.second.second;
 		}
 
 		file.write(reinterpret_cast<char*>(toSave.data), toSave.data_size);
