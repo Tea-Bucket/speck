@@ -98,6 +98,12 @@ int main(int argc, char *argv[]){
 			}
 			speck::addFileToPackage(speckage, entry.path().u8string().c_str());
 		}
+		std::unordered_map<std::string, std::pair<uint64_t,uint64_t>> fixed_copy;
+		for(auto& pair : speckage.file_info)
+		{
+			fixed_copy[pair.first.substr(std::strlen(directory) + 1)] = pair.second;
+		}
+		speckage.file_info = fixed_copy;
 	}
 
 	speck::savePackageToFile(speckage, output);
