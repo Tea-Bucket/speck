@@ -36,15 +36,49 @@ namespace speck{
 		if(file.fail()){
 			//io error
 			free(next_data);
+			file.close();
 			return false;
 		}
 
+		file.close();
 		free(speckage.data);
 		speckage.data_size += file_size;
 		speckage.data = next_data;
 		return true;
 	}
-	bool savePackageToFile(const speckage& toSave, char* filepath);
+	bool savePackageToFile(const speckage& toSave, const char* filepath)
+	{
+		uint64_t header_size = 64;
+
+		for(const auto& info : toSave.file_info)
+		{
+			//two uint64_t for each file;
+			header_size += 128;
+
+			header_size += info.first.size() + 1;
+		}
+
+		std::ofstream file(filepath, std::ios::out|std::ios::binary|std::ios::trunc);
+		file << header_size;
+		for(const auto& info : toSave.file_info)
+		{
+			for(const auto& character : info.first)
+			{
+				file << character;
+			}
+			file << '\0';
+			//position
+			file << info.second.first;
+			//size
+			file << info.second.second;
+		}
+
+		file.write(reinterpret_cast<char*>(toSave.data), toSave.data_size);
+
+		file.close();
+	}
+
+
 	speckage readPackageFromFile(std::string filepath)
 	{
 		std::ifstream file (filepath);
