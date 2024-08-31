@@ -95,7 +95,7 @@ namespace speck{
 
 		for (int i = 0; i < sizeof(data_type); ++i)
 		{
-			file.get(out[i]);
+			out[i] = file.get();
 		}
 		data_type* return_value = reinterpret_cast<uint64_t*>(out);
 		return *return_value;
@@ -103,7 +103,7 @@ namespace speck{
 	speckage readPackageFromFile(std::string filepath)
 	{
 		//std::ifstream file (filepath);
-		auto file = std::ifstream(filepath);
+		auto file = std::ifstream(filepath, std::ios::binary|std::ios::in);
 		speckage out;
 		if (file.bad()) return out;
 		auto header_size = get_data_from_stream<uint64_t>(file);
