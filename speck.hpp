@@ -41,7 +41,8 @@ namespace speck{
 		}
 
 		file.close();
-		free(speckage.data);
+		if (speckage.data_size>0)
+			free(speckage.data);
 		speckage.data_size += file_size;
 		speckage.data = next_data;
 		return true;
@@ -130,7 +131,7 @@ namespace speck{
 		assert((uint64_t) file.tellg()== header_size);
 		out.data = malloc(out.data_size);
 		file.read(reinterpret_cast<char*>(out.data), out.data_size);
-
+		file.close();
 		return out;
 	};
 
