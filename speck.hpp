@@ -137,6 +137,13 @@ namespace speck{
 		file.close();
 		return out;
 	};
+	void unloadSpeckage(speckage& speckage_to_unload)
+	{
+		free(speckage_to_unload.data);
+		speckage_to_unload.file_info.clear();
+		speckage_to_unload.data_size = 0;
+		speckage_to_unload.data = nullptr;
+	};
 
 	///
 	/// @param speckage speckage to read from
