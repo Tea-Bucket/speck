@@ -63,8 +63,7 @@ namespace speck{
 		}
 
 		std::ofstream file(filepath, std::ios::out|std::ios::binary|std::ios::trunc);
-		file << std::setfill('0');
-		file << std::setw(64) << header_size;
+		file.write(reinterpret_cast<char*>(&header_size), 8);
 		for(const auto& info : toSave.file_info)
 		{
 			for(const auto& character : info.first)
@@ -73,9 +72,9 @@ namespace speck{
 			}
 			file << '\0';
 			//position
-			file << std::setw(64) << info.second.first;
+			file.write(reinterpret_cast<const char*>(&info.second.first), 8);
 			//size
-			file << std::setw(64) << info.second.second;
+			file.write(reinterpret_cast<const char*>(&info.second.second), 8);
 		}
 
 		file.write(reinterpret_cast<char*>(toSave.data), toSave.data_size);
