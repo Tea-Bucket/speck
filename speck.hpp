@@ -100,8 +100,11 @@ namespace speck{
 	/// @param filepath relative path inside speckage
 	/// @param size is output
 	/// @return pointer to beginning of output
-	char* readFileFromPackage(const speckage& speckage, std::string filepath, uint32_t& size)
+	void* readFileFromPackage(const speckage& speckage, std::string filepath, uint64_t& size)
 	{
-
+		if(!(speckage.file_info.count(filepath))) return nullptr;
+		std::pair<uint64_t, uint64_t> info = speckage.file_info.at(filepath);
+		size = info.second;
+		return speckage.data + info.first;
 	};
 }
