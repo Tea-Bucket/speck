@@ -52,12 +52,12 @@ namespace speck{
 	}
 	bool savePackageToFile(const speckage& toSave, const char* filepath)
 	{
-		uint64_t header_size = 64;
+		uint64_t header_size = 8;
 
 		for(const auto& info : toSave.file_info)
 		{
 			//two uint64_t for each file;
-			header_size += 128;
+			header_size += 16;
 
 			header_size += info.first.size() + 1;
 		}
