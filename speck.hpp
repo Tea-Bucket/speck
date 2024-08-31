@@ -75,18 +75,38 @@ namespace speck{
 
 		file.write(reinterpret_cast<char*>(toSave.data), toSave.data_size);
 
+		if(file.fail())
+		{
+			file.close();
+			return false;
+		}
 		file.close();
+		return true;
 	}
 
+	template<typename data_type>
+	data_type get_data_from_stream(std::ifstream& file)
+	{
+		char out[sizeof(data_type)];
 
+		for (int i = 0; i < sizeof(data_type); ++i)
+		{
+			file.get(out[i]);
+		}
+		data_type* return_value = reinterpret_cast<uint64_t*>(out);
+		return *return_value;
+	};
 	speckage readPackageFromFile(std::string filepath)
 	{
-		std::ifstream file (filepath);
+		//std::ifstream file (filepath);
+		auto file = std::ifstream(filepath);
 		speckage out;
 		if (file.bad()) return out;
-		uint64_t header_size;
-		file >> header_size;
-		while (file.tellg()<= header_size)
+		auto header_size = get_data_from_stream<uint64_t>(file);
+		//char test;
+		//file.get(test);
+		//file >> header_size;
+		while ((uint64_t) file.tellg() < header_size)
 		{
 			std::vector<char> name;
 			char temp;
@@ -97,17 +117,17 @@ namespace speck{
 			} while (temp);
 			std::string final_name = name.data();
 
-			uint64_t begin_offset;
-			file >> begin_offset;
 
-			uint64_t length;
-			file >> length;
+			auto begin_offset = get_data_from_stream<uint64_t>(file);
+
+
+			auto length = get_data_from_stream<uint64_t>(file);
 			out.data_size += length;
 
 			out.file_info[final_name] = std::pair(begin_offset, length);
 
 		}
-		assert(file.tellg()!= header_size);
+		assert((uint64_t) file.tellg()== header_size);
 		out.data = malloc(out.data_size);
 		file.read(reinterpret_cast<char*>(out.data), out.data_size);
 
