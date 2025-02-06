@@ -1,110 +1,92 @@
+#include "speck.hpp"
+#include <cargs.h>
+#include <cstdio>
 #include <filesystem>
-#include <stdio.h>
 #include <iostream>
 #include <queue>
-#include "speck.hpp"
-int main(int argc, char *argv[]){
 
-	if(argc <= 1)
-	{
-		std::cout << "No arguments used. Run with argument \"help\" to see possible arguments." << std::endl;
-		return -1;
-	}
+static struct cag_option options[] = {
+    {.identifier = 'i',
+     .access_letters = "i",
+     .access_name = "input",
+     .value_name = "FILE_PATH",
+     .description = "Path to file to speck"},
 
-	if(std::strcmp(argv[1], "help") == 0)
-	{
-		//print help text
-		//TODO do
-		std::cout << "help text not yet written. Pls refer to main.cpp" << std::endl;
-		return 0;
-	}
+    {.identifier = 'd',
+     .access_letters = "d",
+     .access_name = "input_dir",
+     .value_name = "DIRECTORY_PATH",
+     .description = "Path to directory to speck"},
 
-	char* output = nullptr;
-	std::vector<char*> files;
-	char* directory = nullptr;
+    {.identifier = 'o',
+     .access_letters = "o",
+     .access_name = "out",
+     .value_name = "FILENAME",
+     .description = "Output path"},
 
-	//0 = undefined
-	//1 = file input
-	//2 = directory input
-	//3 = output
-	uint8_t mode = 0;
+    {.identifier = 'h',
+     .access_letters = "h",
+     .access_name = "help",
+     .description = "Shows the command help"}};
 
-	for(int i = 1; i < argc; i++)
-	{
-		if(std::strcmp(argv[i], "-i") == 0)
-		{
-			mode = 1;
-			continue;
-		}else if(std::strcmp(argv[i], "-d") == 0)
-		{
-			mode = 2;
-			continue;
-		}else if (std::strcmp(argv[i], "-o") == 0) {
-			mode = 3;
-			continue;
-		}
+int main(int argc, char *argv[]) {
 
-		if (mode == 0) {
-			std::cout << "Incorrect arguments used. Run with argument \"help\" to see possible arguments." << std::endl;
-			return -1;
-		}
+  std::vector<std::filesystem::path> input_files;
+  std::vector<std::filesystem::path> input_directories;
+  bool output_is_set = false;
+  std::filesystem::path output_file;
 
-		switch (mode) {
-		case 1:
-			{
-				char* file = (char*) malloc(std::strlen(argv[i]));
-				std::strcpy(file, argv[i]);
-				files.push_back(file);
-			}
-			break;
-		case 2:
-			if(directory != nullptr){
-				std::cout << "Can only package one directory" << std::endl;
-				return -1;
-			}
-			directory = (char*) malloc(std::strlen(argv[i]));
-			std::strcpy(directory, argv[i]);
-			break;
-		case 3:
-			if (output != nullptr) {
-				std::cout << "Can only have one output" << std::endl;
-				return -1;
-			}
-			output = (char*) malloc(std::strlen(argv[i]));
-			std::strcpy(output, argv[i]);
-			break;
-		}
-	}
+  cag_option_context context;
+  cag_option_init(&context, options, CAG_ARRAY_SIZE(options), argc, argv);
+  while (cag_option_fetch(&context)) {
+    switch (cag_option_get_identifier(&context)) {
+    case 'i':
+      input_files.emplace_back(cag_option_get_value(&context));
+      break;
+    case 'd':
+      input_directories.emplace_back(cag_option_get_value(&context));
+      break;
+    case 'o':
+      if (output_is_set) {
+        std::cout << "[ERROR] Only one output may be set." << std::endl;
+        return EXIT_FAILURE;
+      }
+      output_is_set = true;
+      output_file = cag_option_get_value(&context);
+      break;
+    case 'h':
+      printf("Usage: speck [OPTION]...\n");
+      printf("Creates speckages.\n\n");
+      cag_option_print(options, CAG_ARRAY_SIZE(options), stdout);
+      return EXIT_SUCCESS;
+    case '?':
+      cag_option_print_error(&context, stdout);
+      break;
+    }
+  }
 
-	speck::speckage speckage;
+  for (const auto directory : input_directories) {
+    if (!std::filesystem::is_directory(directory)) {
+      std::cout << "[ERROR] -d " << directory.string()
+                << " needs to be a directory" << std::endl;
+      return EXIT_FAILURE;
+    }
+    std::filesystem::recursive_directory_iterator it(
+        directory,
+        std::filesystem::directory_options::follow_directory_symlink);
+    for (const auto &entry : it) {
+      if (entry.is_directory()) {
+        continue;
+      }
+      input_files.push_back(entry);
+    }
+  }
 
-	//file mode
-	if(directory == nullptr){
-		for(const char* filepath : files)
-		{
-			speck::addFileToPackage(speckage, filepath);
-		}
-	}else{
-		std::filesystem::path path = std::string(directory);
-		if(!std::filesystem::is_directory(path)){
-			std::cout << "directory needs to be a directory" << std::endl;
-			return -1;
-		}
-		std::filesystem::recursive_directory_iterator it(path, std::filesystem::directory_options::follow_directory_symlink);
-		for(const auto& entry : it)
-		{
-			if(entry.is_directory()){
-				continue;
-			}
-			speck::addFileToPackage(speckage, entry.path().u8string().c_str());
-		}
-		std::unordered_map<std::string, std::pair<uint64_t,uint64_t>> fixed_copy;
-		for(auto& pair : speckage.file_info)
-		{
-			fixed_copy[pair.first.substr(std::strlen(directory) + 1)] = pair.second;
-		}
-		speckage.file_info = fixed_copy;
-	}
+  speck::speckage speckage;
 
-	speck::savePackageToFile(speckage, output);
+  for (const auto filepath : input_files) {
+    speck::addFileToPackage(speckage, filepath.c_str());
+  }
+
+  speck::savePackageToFile(speckage, output_file.c_str());
 }
