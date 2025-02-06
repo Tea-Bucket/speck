@@ -7,9 +7,16 @@
 #include <unordered_map>
 #include <vector>
 
+#define SPECK_STRING "SPECK"
+#define SPECK_VERSION "1.0"
+
+#define SPECK_STRING_LENGTH 6
+#define SPECK_VERSION_LENGTH 4
+
 namespace speck {
 struct speckage {
-  std::unordered_map<std::string, std::pair<uint64_t, uint64_t>> file_info;
+  std::unordered_map<std::string, std::pair<uint64_t, uint64_t>>
+      file_info; // position in speckage, file size
   char *data;
   uint64_t data_size = 0;
 };
@@ -59,6 +66,8 @@ bool savePackageToFile(const speckage &toSave, const char *filepath) {
 
   std::ofstream file(filepath,
                      std::ios::out | std::ios::binary | std::ios::trunc);
+  file.write(SPECK_STRING, SPECK_STRING_LENGTH);
+  file.write(SPECK_VERSION, SPECK_VERSION_LENGTH);
   file.write(reinterpret_cast<char *>(&header_size), 8);
   for (const auto &info : toSave.file_info) {
     for (const auto &character : info.first) {
@@ -97,7 +106,22 @@ speckage readPackageFromFile(std::string filepath) {
   speckage out;
   if (file.bad())
     return out;
-  auto header_size = get_data_from_stream<uint64_t>(file);
+
+  // check header prefix
+  char name_string[SPECK_STRING_LENGTH];
+  char version_string[SPECK_VERSION_LENGTH];
+
+  file.read(name_string, SPECK_STRING_LENGTH);
+  file.read(version_string, SPECK_VERSION_LENGTH);
+
+  if (std::strcmp(name_string, SPECK_STRING) != 0 ||
+      std::strcmp(version_string, SPECK_VERSION) != 0) {
+    return out;
+  }
+
+  // read header
+  auto header_size = get_data_from_stream<uint64_t>(file) +
+                     SPECK_STRING_LENGTH + SPECK_VERSION_LENGTH;
   while ((uint64_t)file.tellg() < header_size) {
     std::vector<char> name;
     char temp;
