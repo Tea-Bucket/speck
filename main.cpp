@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <filesystem>
 #include <iostream>
-#include <queue>
 
 static struct cag_option options[] = {
     {.identifier = 'i',
