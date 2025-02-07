@@ -1,10 +1,17 @@
 #include "speck.hpp"
 #include <cargs.h>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 
 static struct cag_option options[] = {
+    {.identifier = 'a',
+     .access_letters = NULL,
+     .access_name = "alloc-size",
+     .value_name = "BYTES",
+     .description = "Minimum number of bytes to allocate, when more memory needs to be allocated."},
+    
     {.identifier = 'r',
      .access_letters = "r",
      .access_name = "read",
@@ -88,11 +95,18 @@ int main(int argc, char *argv[]) {
   std::filesystem::path output_file;
   bool read_mode = false;
   std::filesystem::path read_file;
+  uint64_t min_expand = 0;
 
   cag_option_context context;
   cag_option_init(&context, options, CAG_ARRAY_SIZE(options), argc, argv);
   while (cag_option_fetch(&context)) {
     switch (cag_option_get_identifier(&context)) {
+    case 'a':
+      {
+	char* end = nullptr;
+	min_expand = std::strtoull(cag_option_get_value(&context),&end,10);
+      }
+      break;
     case 'r':
       if (read_mode) {
         std::cout << "[ERROR] Only one read file may be set." << std::endl;
@@ -153,6 +167,7 @@ int main(int argc, char *argv[]) {
   }
 
   speck::speckage speckage;
+  speckage.min_memory_on_expand = min_expand;
 
   for (const auto filepath : input_files) {
     speck::add_file_to_speckage(speckage, filepath.c_str());

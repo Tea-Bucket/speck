@@ -19,6 +19,8 @@ struct speckage {
       file_info; // position in speckage, file size
   char *data;
   uint64_t data_size = 0;
+  uint64_t first_empty_location = 0;
+  uint64_t min_memory_on_expand = 0; // minimum memory to add to data, when expanding 
 };
 
 bool add_file_to_speckage(speckage &speckage, const char *filepath) {
@@ -30,28 +32,35 @@ bool add_file_to_speckage(speckage &speckage, const char *filepath) {
   auto file_size = file.tellg();
   file.seekg(0, std::ios::beg);
 
-  char *next_data = (char *)malloc(speckage.data_size + file_size);
+  if(speckage.data_size-speckage.first_empty_location < (uint64_t)file_size){
+    uint64_t next_size = (uint64_t)file_size > speckage.min_memory_on_expand ? (uint64_t)file_size : speckage.min_memory_on_expand;
+    char *next_data = (char *)malloc(speckage.data_size + next_size);
 
-  std::memcpy(next_data, speckage.data, speckage.data_size);
+    std::memcpy(next_data, speckage.data, speckage.data_size);
 
-  file.read(reinterpret_cast<char *>(next_data) + speckage.data_size,
+    if(speckage.data_size > 0) {
+      free(speckage.data);
+    }
+    
+    speckage.data = next_data;
+    speckage.data_size += next_size;
+  }
+  
+
+  file.read(reinterpret_cast<char *>(speckage.data) + speckage.first_empty_location,
             file_size);
 
   if (file.fail()) {
     // io error
-    free(next_data);
     file.close();
     return false;
   }
 
   speckage.file_info[std::string(filepath)] =
-      std::make_pair(speckage.data_size, file_size);
+      std::make_pair(speckage.first_empty_location, file_size);
 
   file.close();
-  if (speckage.data_size > 0)
-    free(speckage.data);
-  speckage.data_size += file_size;
-  speckage.data = next_data;
+  speckage.first_empty_location += file_size;
   return true;
 }
 bool save_speckage_to_file(const speckage &toSave, const char *filepath) {
@@ -80,7 +89,7 @@ bool save_speckage_to_file(const speckage &toSave, const char *filepath) {
     file.write(reinterpret_cast<const char *>(&info.second.second), 8);
   }
 
-  file.write(reinterpret_cast<char *>(toSave.data), toSave.data_size);
+  file.write(reinterpret_cast<char *>(toSave.data), toSave.first_empty_location-1);
 
   if (file.fail()) {
     file.close();
@@ -135,6 +144,7 @@ speckage read_speckage_from_file(std::string filepath) {
 
     auto length = get_data_from_stream<uint64_t>(file);
     out.data_size += length;
+    out.first_empty_location = out.data_size + 1;
 
     out.file_info[final_name] = std::pair(begin_offset, length);
   }
@@ -149,6 +159,7 @@ void unload_speckage(speckage &speckage_to_unload) {
   free(speckage_to_unload.data);
   speckage_to_unload.file_info.clear();
   speckage_to_unload.data_size = 0;
+  speckage_to_unload.first_empty_location = 0;
   speckage_to_unload.data = nullptr;
 };
 

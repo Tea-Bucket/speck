@@ -1,4 +1,4 @@
-CFLAGS = -std=c++20 -o2 -g
+CFLAGS = -std=c++20 -O3
 IFLAGS = -Ibuild
 LDFLAGS = -Lbuild -lcargs
 
