@@ -21,7 +21,7 @@ struct speckage {
   uint64_t data_size = 0;
 };
 
-bool addFileToPackage(speckage &speckage, const char *filepath) {
+bool add_file_to_speckage(speckage &speckage, const char *filepath) {
   std::ifstream file(filepath, std::ios::in | std::ios::binary | std::ios::ate);
   if (!file) {
     // file failed to open
@@ -54,7 +54,7 @@ bool addFileToPackage(speckage &speckage, const char *filepath) {
   speckage.data = next_data;
   return true;
 }
-bool savePackageToFile(const speckage &toSave, const char *filepath) {
+bool save_speckage_to_file(const speckage &toSave, const char *filepath) {
   uint64_t header_size = 8;
 
   for (const auto &info : toSave.file_info) {
@@ -101,7 +101,7 @@ data_type get_data_from_stream(std::ifstream &file) {
   return *return_value;
 };
 
-speckage readPackageFromFile(std::string filepath) {
+speckage read_speckage_from_file(std::string filepath) {
   auto file = std::ifstream(filepath, std::ios::binary | std::ios::in);
   speckage out;
   if (file.bad())
@@ -145,7 +145,7 @@ speckage readPackageFromFile(std::string filepath) {
   return out;
 };
 
-void unloadSpeckage(speckage &speckage_to_unload) {
+void unload_speckage(speckage &speckage_to_unload) {
   free(speckage_to_unload.data);
   speckage_to_unload.file_info.clear();
   speckage_to_unload.data_size = 0;
@@ -157,7 +157,7 @@ void unloadSpeckage(speckage &speckage_to_unload) {
 /// @param filepath relative path inside speckage
 /// @param size is output
 /// @return pointer to beginning of output
-char *readFileFromPackage(const speckage &speckage, std::string filepath,
+char *read_file_from_speckage(const speckage &speckage, std::string filepath,
                           uint64_t &size) {
   if (!(speckage.file_info.count(filepath)))
     return nullptr;

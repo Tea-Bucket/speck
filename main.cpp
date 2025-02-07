@@ -35,13 +35,12 @@ static struct cag_option options[] = {
      .access_name = "help",
      .description = "Shows the command help"}};
 
-void read_speckage(std::filesystem::path input,
-                   std::filesystem::path output_dir) {
-  speck::speckage speckage = speck::readPackageFromFile(input.string());
+speck::speckage read_speckage(std::filesystem::path input) {
+  speck::speckage speckage = speck::read_speckage_from_file(input.string());
 
   if (speckage.data_size == 0) {
     std::printf("[ERROR] Invalid speckage");
-    return;
+    return speckage;
   }
 
   std::string filename_label = "filename";
@@ -53,12 +52,32 @@ void read_speckage(std::filesystem::path input,
 
   std::printf("%-*s | %s\n", max_name_length, filename_label.c_str(), "size");
 
-  for (auto mapentry : speckage.file_info) {
+  for (const auto mapentry : speckage.file_info) {
     std::printf("%-*s | 0x%x\n", max_name_length, mapentry.first.c_str(),
                 mapentry.second.second);
   }
+  return speckage;
+}
 
-  speck::unloadSpeckage(speckage);
+void unspeck(const speck::speckage &speckage, std::filesystem::path output_dir){
+  std::printf("\n\nUnspecking into %s...\n", output_dir.c_str());
+  
+  for(const auto file_info : speckage.file_info){
+    uint64_t size;
+    char* location = speck::read_file_from_speckage(speckage, file_info.first, size);
+    auto save_file = output_dir / std::filesystem::path(file_info.first);
+
+    std::printf("\t-%s\n", save_file.c_str());
+    if(!std::filesystem::exists(save_file.parent_path())){
+      std::filesystem::create_directories(save_file.parent_path());
+      std::printf("\t\t-created directory %s\n", save_file.parent_path().c_str());
+    }
+    
+    std::ofstream file(save_file,
+                     std::ios::out | std::ios::binary | std::ios::trunc);
+    file.write(location, size);
+    file.close();
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -108,7 +127,11 @@ int main(int argc, char *argv[]) {
   }
 
   if (read_mode) {
-    read_speckage(read_file, output_file);
+    auto speckage = read_speckage(read_file);
+    if(output_is_set){
+      unspeck(speckage, output_file);
+    }
+    speck::unload_speckage(speckage);
     return EXIT_SUCCESS;
   }
 
@@ -132,8 +155,8 @@ int main(int argc, char *argv[]) {
   speck::speckage speckage;
 
   for (const auto filepath : input_files) {
-    speck::addFileToPackage(speckage, filepath.c_str());
+    speck::add_file_to_speckage(speckage, filepath.c_str());
   }
 
-  speck::savePackageToFile(speckage, output_file.c_str());
+  speck::save_speckage_to_file(speckage, output_file.c_str());
 }
