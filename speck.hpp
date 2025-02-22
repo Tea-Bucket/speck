@@ -24,7 +24,8 @@ struct speckage {
 };
 
 struct appendedSpeckageInfos {
-    std::unordered_map<std::string, size_t> speckage_offset_map;
+    std::unordered_map<std::string, size_t>      speckage_offset_map;
+    std::unordered_map<std::string, std::string> filename_speckage_map;
 };
 
 appendedSpeckageInfos discover_appended_speckages(const std::string& filepath);
