@@ -1,0 +1,41 @@
+BasedOnStyle: LLVM
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: Left
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+
+AlignConsecutiveBitFields:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel:  false
+  AfterControlStatement: Always
+  AfterEnum:       false
+  AfterExternBlock: false
+  AfterFunction:   true
+  AfterStruct:     false
+  AfterUnion:      false 
+  BeforeElse:      false
+  BeforeLambdaBody: false
+  BeforeWhile:     true
+  IndentBraces:    false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true 
+  SplitEmptyNamespace: true
+
+PointerAlignment: Left
+
+ColumnLimit: 240
+IndentWidth: 4
+ReflowComments: false
+BreakTemplateDeclarations: Yes
