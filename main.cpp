@@ -170,8 +170,8 @@ int main(int argc, char *argv[]) {
   speckage.min_memory_on_expand = min_expand;
 
   for (const auto filepath : input_files) {
-    speck::add_file_to_speckage(speckage, filepath.c_str());
+    speck::add_file_to_speckage(speckage, filepath.string());
   }
 
-  speck::save_speckage_to_file(speckage, output_file.c_str());
+  speck::save_speckage_to_file(speckage, output_file.string());
 }
