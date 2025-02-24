@@ -51,6 +51,8 @@ speckage              read_speckage_from_file(std::string filepath);
 
 void                  unload_speckage(speckage& speckage_to_unload);
 
+std::vector<std::string> discover_files_in_speckage(const std::string& filepath);
+
 ///
 /// @param speckage speckage to read from
 /// @param filepath relative path inside speckage
