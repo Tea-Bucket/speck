@@ -1,5 +1,15 @@
 #include "include/speck.hpp"
 
+speck::appendedSpeckageInfos speck::discover_appended_speckages(const std::string& filepath)
+{
+    return {};
+}
+
+speck::appendedSpeckageInfos speck::discover_appended_speckages(std::istream& stream)
+{
+    return {};
+}
+
 bool speck::add_file_to_speckage(speckage& speckage, const std::string& filepath)
 {
     std::ifstream file(filepath, std::ios::in | std::ios::binary | std::ios::ate);
