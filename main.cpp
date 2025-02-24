@@ -16,6 +16,10 @@ static struct cag_option options[] = {
 
     {.identifier = 'o', .access_letters = "o", .access_name = "out", .value_name = "FILENAME", .description = "Output path. If -r is set, path to directory to unspeck the files."},
 
+    {.identifier = 'b', .access_letters = "b", .access_name = "backslash", .description = "forces all slashes in saved filename to be backslashes."},
+
+    {.identifier = 'f', .access_letters = "f", .access_name = "forward_slash", .description = "forces all slashes in saved filename to be forward slashes."},
+
     {.identifier = 'h', .access_letters = "h", .access_name = "help", .description = "Shows the command help"}
 };
 
@@ -78,6 +82,8 @@ int main(int argc, char* argv[])
     bool                               read_mode = false;
     std::filesystem::path              read_file;
     uint64_t                           min_expand = 0;
+    bool                               force_forward_slash = false;
+    bool                               force_backslash = false;
 
     cag_option_context                 context;
     cag_option_init(&context, options, CAG_ARRAY_SIZE(options), argc, argv);
@@ -113,6 +119,22 @@ int main(int argc, char* argv[])
             }
             output_is_set = true;
             output_file   = cag_option_get_value(&context);
+            break;
+        case 'f':
+            if (force_backslash)
+            {
+                std::cout << "[ERROR] Only one slash style may be set." << std::endl;
+                return EXIT_FAILURE;
+            }
+            force_forward_slash = true;
+            break;
+        case 'b':
+            if (force_forward_slash)
+            {
+                std::cout << "[ERROR] Only one slash style may be set." << std::endl;
+                return EXIT_FAILURE;
+            }
+            force_backslash = true;
             break;
         case 'h':
             printf("Usage: speck [OPTION]...\n");
@@ -159,7 +181,14 @@ int main(int argc, char* argv[])
 
     for (const auto filepath : input_files)
     {
-        speck::add_file_to_speckage(speckage, filepath.string());
+        std::string path = filepath.string();
+        if (force_backslash) std::ranges::replace(path, '/', '\\');
+        if (force_forward_slash) std::ranges::replace(path, '\\', '/');
+        if (!speck::add_file_to_speckage(speckage, path))
+        {
+            std::cout << "[ERROR] " << path << " could not be specked" << std::endl;
+            return EXIT_FAILURE;
+        }
     }
 
     speck::save_speckage_to_file(speckage, output_file.string());
