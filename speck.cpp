@@ -10,6 +10,11 @@ speck::appendedSpeckageInfos speck::discover_appended_speckages(std::istream& st
     return {};
 }
 
+speck::speckage speck::read_appended_speckage_from_file(const std::string& speckage_name, const appendedSpeckageInfos& appended_speckage_infos)
+{
+    return {};
+}
+
 bool speck::add_file_to_speckage(speckage& speckage, const std::string& filepath)
 {
     std::ifstream file(filepath, std::ios::in | std::ios::binary | std::ios::ate);
@@ -148,6 +153,46 @@ void speck::unload_speckage(speckage& speckage_to_unload)
     speckage_to_unload.data_size            = 0;
     speckage_to_unload.first_empty_location = 0;
     speckage_to_unload.data                 = nullptr;
+}
+
+std::vector<std::string> speck::discover_files_in_speckage(const std::string& filepath)
+{
+    auto     file = std::ifstream(filepath, std::ios::binary | std::ios::in);
+    std::vector<std::string> out;
+    if (file.bad())
+        return out;
+
+    // check header prefix
+    char name_string[SPECK_STRING_LENGTH];
+    char version_string[SPECK_VERSION_LENGTH];
+
+    file.read(name_string, SPECK_STRING_LENGTH);
+    file.read(version_string, SPECK_VERSION_LENGTH);
+
+    if (std::strcmp(name_string, SPECK_STRING) != 0 || std::strcmp(version_string, SPECK_VERSION) != 0)
+    {
+        return out;
+    }
+
+    // read header
+    auto header_size = get_data_from_stream<uint64_t>(file) + SPECK_STRING_LENGTH + SPECK_VERSION_LENGTH;
+    while ((uint64_t)file.tellg() < header_size)
+    {
+        std::vector<char> name;
+        char              temp;
+        do
+        {
+            file.get(temp);
+            name.push_back(temp);
+        }
+        while (temp);
+        std::string final_name   = name.data();
+
+        auto        begin_offset = get_data_from_stream<uint64_t>(file);
+        auto        length       = get_data_from_stream<uint64_t>(file);
+        out.push_back(final_name);
+    }
+    return out;
 }
 
 char* speck::read_file_from_speckage(const speckage& speckage, std::string filepath, uint64_t& size)
