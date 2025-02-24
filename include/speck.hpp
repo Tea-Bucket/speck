@@ -24,6 +24,7 @@ struct speckage {
 };
 
 struct appendedSpeckageInfos {
+    std::string filepath;
     std::unordered_map<std::string, size_t>      speckage_offset_map;
     std::unordered_map<std::string, std::string> filename_speckage_map;
 };
@@ -31,8 +32,8 @@ struct appendedSpeckageInfos {
 appendedSpeckageInfos discover_appended_speckages(const std::string& filepath);
 appendedSpeckageInfos discover_appended_speckages(std::istream& stream);
 
-speckage              read_appended_speckage_from_file(const std::string& speckage_name, const appendedSpeckageInfos& appended_speckage_infos, const std::string& filepath);
-std::vector<speckage> read_appended_speckages_from_file(const std::vector<std::string>& speckage_names, const appendedSpeckageInfos& appended_speckage_infos, const std::string& filepath);
+speckage              read_appended_speckage_from_file(const std::string& speckage_name, const appendedSpeckageInfos& appended_speckage_infos);
+std::vector<speckage> read_appended_speckages_from_file(const std::vector<std::string>& speckage_names, const appendedSpeckageInfos& appended_speckage_infos);
 
 speckage              read_appended_speckage_from_stream(const std::string& speckage_name, const appendedSpeckageInfos& appended_speckage_infos, std::istream& stream);
 std::vector<speckage> read_appended_speckages_from_stream(const std::vector<std::string>& speckage_names, const appendedSpeckageInfos& appended_speckage_infos, std::istream& stream);
