@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <algorithm>
 
 static struct cag_option options[] = {
     {.identifier = 'a', .access_letters = NULL, .access_name = "alloc-size", .value_name = "BYTES", .description = "Minimum number of bytes to allocate, when more memory needs to be allocated."},
