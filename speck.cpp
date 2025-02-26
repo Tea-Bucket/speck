@@ -5,7 +5,7 @@ void write_speckage_to_stream(const speckage& speckage, std::ostream& stream)
 {
     uint64_t header_size = sizeof(uint64_t); // starting size for the size itself
 
-    uint8_t  name_size   = (uint8_t)speckage.name.size()+1;
+    uint8_t  name_size   = (uint8_t)speckage.name.size();
     header_size += sizeof(name_size);
     header_size += name_size;
 
