@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
         } else
         {
             // appended speckages
-            auto                     speckages_infos = speck::discover_appended_speckages(read_file);
+            auto                     speckages_infos = speck::discover_appended_speckages(read_file.string());
             std::vector<std::string> speckage_names;
             printf("found the following %i speckages:\n", speckages_infos.speckage_offset_map.size());
             for (const auto& [key, val] : speckages_infos.speckage_offset_map)
