@@ -268,7 +268,6 @@ int main(int argc, char* argv[])
         for (const auto& file : input_files)
         {
             speck::speckage read = speck::read_speckage_from_file(file.string());
-            printf("read speckage name: %s\n", read.name.data());
             if (read.data_size > 0)
             {
                 speckages.push_back(read);

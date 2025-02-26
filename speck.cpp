@@ -161,6 +161,7 @@ appendedSpeckageInfos discover_appended_speckages(std::istream& stream)
 
         out.speckage_offset_map[name] = position;
 
+	stream.seekg(position, std::ios_base::beg);
         std::unordered_map<std::string, std::pair<uint64_t, uint64_t>> file_info;
         uint64_t                                                       data_size;
         std::string                                                    temp;
