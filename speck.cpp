@@ -341,36 +341,15 @@ std::vector<std::string> discover_files_in_speckage(const std::string& filepath)
     if (file.bad())
         return out;
 
-    // check header prefix
-    char name_string[SPECK_STRING_LENGTH];
-    char version_string[SPECK_VERSION_LENGTH];
+    std::string speckage_name;
+    uint64_t data_size;
+    std::unordered_map<std::string, std::pair<uint64_t, uint64_t>> file_info;
+    read_header_from_stream(file, speckage_name, data_size, file_info);
 
-    file.read(name_string, SPECK_STRING_LENGTH);
-    file.read(version_string, SPECK_VERSION_LENGTH);
-
-    if (std::strcmp(name_string, SPECK_STRING) != 0 || std::strcmp(version_string, SPECK_VERSION) != 0)
-    {
-        return out;
+    for(const auto& [name, val] : file_info){
+      out.push_back(name);
     }
-
-    // read header
-    auto header_size = get_data_from_stream<uint64_t>(file) + SPECK_STRING_LENGTH + SPECK_VERSION_LENGTH;
-    while ((uint64_t)file.tellg() < header_size)
-    {
-        std::vector<char> name;
-        char              temp;
-        do
-        {
-            file.get(temp);
-            name.push_back(temp);
-        }
-        while (temp);
-        std::string final_name   = name.data();
-
-        auto        begin_offset = get_data_from_stream<uint64_t>(file);
-        auto        length       = get_data_from_stream<uint64_t>(file);
-        out.push_back(final_name);
-    }
+    
     return out;
 }
 
