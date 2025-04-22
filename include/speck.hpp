@@ -42,8 +42,8 @@ std::vector<speckage>    read_appended_speckages_from_file(const std::vector<std
 speckage                 read_appended_speckage_from_stream(const std::string& speckage_name, const appendedSpeckageInfos& appended_speckage_infos, std::istream& stream);
 std::vector<speckage>    read_appended_speckages_from_stream(const std::vector<std::string>& speckage_names, const appendedSpeckageInfos& appended_speckage_infos, std::istream& stream);
 
-bool                     append_speckages_to_file(const std::vector<speckage>& speckages, const std::string& filepath);
-bool                     append_speckages_to_stream(const std::vector<speckage>& speckages, std::ostream& stream);
+bool                     append_speckages_to_file(const std::vector<speckage>& speckages, const std::string& filepath, bool add_security_footer = true);
+bool                     append_speckages_to_stream(const std::vector<speckage>& speckages, std::ostream& stream, bool add_security_footer = true);
 
 bool                     add_file_to_speckage(speckage& speckage, const std::string& filepath);
 

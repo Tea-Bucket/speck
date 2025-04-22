@@ -26,7 +26,12 @@ static struct cag_option options[] = {
 
     {.identifier = 'h', .access_letters = "h", .access_name = "help", .description = "Shows the command help"},
 
-    {.identifier = 'n', .access_letters = "n", .access_name = "name", .value_name = "NAME", .description = "Name to give the speckage. Only used when creating a speckage. NOTE: this is not the outpu filename, see -o."}
+    {.identifier = 'n', .access_letters = "n", .access_name = "name", .value_name = "NAME", .description = "Name to give the speckage. Only used when creating a speckage. NOTE: this is not the output filename, see -o."},
+
+    {.identifier     = 's',
+     .access_letters = "s",
+     .access_name    = "skip_beginning",
+     .description    = "When appending, skips adding an empty header before the appended speckages. Use this when appending to a file that already has appended speckages."}
 };
 
 speck::speckage read_speckage(std::filesystem::path input)
@@ -85,8 +90,9 @@ int main(int argc, char* argv[])
     std::string                        out_speckage_name = "";
     bool                               output_is_set     = false;
     std::filesystem::path              output_file;
-    bool                               should_append = false;
-    bool                               read_mode     = false;
+    bool                               should_append               = false;
+    bool                               skip_append_security_footer = false;
+    bool                               read_mode                   = false;
     std::filesystem::path              read_file;
     uint64_t                           min_expand          = 0;
     bool                               force_forward_slash = false;
@@ -112,6 +118,10 @@ int main(int argc, char* argv[])
         break;
         case 'p': {
             should_append = true;
+            break;
+        }
+        case 's': {
+            skip_append_security_footer = true;
             break;
         }
         case 'r':
@@ -224,6 +234,12 @@ int main(int argc, char* argv[])
         }
     }
 
+    if (input_files.empty())
+    {
+        std::cout << "[ERROR] no input files were supplied" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     // specking mode
     if (!should_append)
     {
@@ -273,7 +289,7 @@ int main(int argc, char* argv[])
                 speckages.push_back(read);
             }
         }
-        if (!speck::append_speckages_to_file(speckages, output_file.string()))
+        if (!speck::append_speckages_to_file(speckages, output_file.string(), !skip_append_security_footer))
         {
             return EXIT_FAILURE;
         }

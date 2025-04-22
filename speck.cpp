@@ -161,7 +161,7 @@ appendedSpeckageInfos discover_appended_speckages(std::istream& stream)
 
         out.speckage_offset_map[name] = position;
 
-	stream.seekg(position, std::ios_base::beg);
+        stream.seekg(position, std::ios_base::beg);
         std::unordered_map<std::string, std::pair<uint64_t, uint64_t>> file_info;
         uint64_t                                                       data_size;
         std::string                                                    temp;
@@ -215,11 +215,11 @@ std::vector<speckage> read_appended_speckages_from_stream(const std::vector<std:
     return out;
 }
 
-bool append_speckages_to_file(const std::vector<speckage>& speckages, const std::string& filepath)
+bool append_speckages_to_file(const std::vector<speckage>& speckages, const std::string& filepath, bool add_security_footer)
 {
     std::ofstream file(filepath, std::ios::out | std::ios::binary | std::ios::ate | std::ios::app);
 
-    append_speckages_to_stream(speckages, file);
+    append_speckages_to_stream(speckages, file, add_security_footer);
 
     if (file.fail())
     {
@@ -230,13 +230,16 @@ bool append_speckages_to_file(const std::vector<speckage>& speckages, const std:
     return true;
 }
 
-bool append_speckages_to_stream(const std::vector<speckage>& speckages, std::ostream& stream)
+bool append_speckages_to_stream(const std::vector<speckage>& speckages, std::ostream& stream, bool add_security_footer)
 {
     stream.seekp(0, std::ios_base::end);
 
-    for (int i = 0; i < SPECK_FOOTER_STRING_LENGTH + SPECK_VERSION_LENGTH; ++i)
+    if (add_security_footer)
     {
-        stream.put(0);
+        for (int i = 0; i < SPECK_FOOTER_STRING_LENGTH + SPECK_VERSION_LENGTH; ++i)
+        {
+            stream.put(0);
+        }
     }
 
     for (const auto& speckage : speckages)
@@ -342,15 +345,16 @@ std::vector<std::string> discover_files_in_speckage(const std::string& filepath)
     if (file.bad())
         return out;
 
-    std::string speckage_name;
-    uint64_t data_size;
+    std::string                                                    speckage_name;
+    uint64_t                                                       data_size;
     std::unordered_map<std::string, std::pair<uint64_t, uint64_t>> file_info;
     read_header_from_stream(file, speckage_name, data_size, file_info);
 
-    for(const auto& [name, val] : file_info){
-      out.push_back(name);
+    for (const auto& [name, val] : file_info)
+    {
+        out.push_back(name);
     }
-    
+
     return out;
 }
 
