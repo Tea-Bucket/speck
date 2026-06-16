@@ -275,6 +275,7 @@ bool add_file_to_speckage(speckage& speckage, const std::string& filepath)
     {
         uint64_t next_size = (uint64_t)file_size > speckage.min_memory_on_expand ? (uint64_t)file_size : speckage.min_memory_on_expand;
         char*    next_data = (char*)malloc(speckage.data_size + next_size);
+        if (!next_data) return false;
 
         std::memcpy(next_data, speckage.data, speckage.data_size);
 

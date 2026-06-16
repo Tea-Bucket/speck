@@ -8,8 +8,6 @@
 #include <iostream>
 
 static struct cag_option options[] = {
-    {.identifier = 'a', .access_letters = NULL, .access_name = "alloc-size", .value_name = "BYTES", .description = "Minimum number of bytes to allocate, when more memory needs to be allocated."},
-
     {.identifier = 'p', .access_letters = "a", .access_name = "append", .description = "When flag is set, speckage will be appended to the end of the file specified by out or appended speckages will be read, when r is set."},
 
     {.identifier = 'r', .access_letters = "r", .access_name = "read", .value_name = "FILE_PATH", .description = "Path to speck file to read"},
@@ -94,7 +92,6 @@ int main(int argc, char* argv[])
     bool                               skip_append_security_footer = false;
     bool                               read_mode                   = false;
     std::filesystem::path              read_file;
-    uint64_t                           min_expand          = 0;
     bool                               force_forward_slash = false;
     bool                               force_backslash     = false;
 
@@ -111,11 +108,6 @@ int main(int argc, char* argv[])
     {
         switch (cag_option_get_identifier(&context))
         {
-        case 'a': {
-            char* end  = nullptr;
-            min_expand = std::strtoull(cag_option_get_value(&context), &end, 10);
-        }
-        break;
         case 'p': {
             should_append = true;
             break;
@@ -244,7 +236,11 @@ int main(int argc, char* argv[])
     if (!should_append)
     {
         speck::speckage speckage;
-        speckage.min_memory_on_expand = min_expand;
+        speckage.min_memory_on_expand = 0;
+        for (const auto& filepath : input_files)
+        {
+            speckage.min_memory_on_expand += std::filesystem::file_size(filepath);
+        }
 
         if (out_speckage_name.empty())
         {
