@@ -8,9 +8,11 @@
 #include <iostream>
 
 static struct cag_option options[] = {
-    {.identifier = 'p', .access_letters = "a", .access_name = "append", .description = "When flag is set, speckage will be appended to the end of the file specified by out or appended speckages will be read, when r is set."},
+    {.identifier = 'p', .access_letters = "a", .access_name = "append", .description = "When flag is set, speckage will be appended to the end of the file specified by out."},
 
     {.identifier = 'r', .access_letters = "r", .access_name = "read", .value_name = "FILE_PATH", .description = "Path to speck file to read"},
+
+    {.identifier = 'v', .access_letters = "v", .access_name = "verbose", .description = "print contents of read speckages"},
 
     {.identifier = 'i', .access_letters = "i", .access_name = "input", .value_name = "FILE_PATH", .description = "Path to file to speck. Ignored, if -r is set."},
 
@@ -25,21 +27,14 @@ static struct cag_option options[] = {
     {.identifier = 'h', .access_letters = "h", .access_name = "help", .description = "Shows the command help"},
 
     {.identifier = 'n', .access_letters = "n", .access_name = "name", .value_name = "NAME", .description = "Name to give the speckage. Only used when creating a speckage. NOTE: this is not the output filename, see -o."},
-
-    {.identifier     = 's',
-     .access_letters = "s",
-     .access_name    = "skip_beginning",
-     .description    = "When appending, skips adding an empty header before the appended speckages. Use this when appending to a file that already has appended speckages."}
 };
 
-speck::speckage read_speckage(std::filesystem::path input)
+void print_speckage(const speck::speckage_read_info& speckage)
 {
-    speck::speckage speckage = speck::read_speckage_from_file(input.string());
-
-    if (speckage.data_size == 0)
+    if (speckage.file_info.size() == 0)
     {
-        std::printf("[ERROR] Invalid speckage");
-        return speckage;
+        std::printf("\t\tempty speckage\n");
+        return;
     }
 
     std::string filename_label  = "filename";
@@ -49,16 +44,15 @@ speck::speckage read_speckage(std::filesystem::path input)
         max_name_length = std::max(max_name_length, (uint16_t)mapentry.first.length());
     }
 
-    std::printf("%-*s | %s\n", max_name_length, filename_label.c_str(), "size");
+    std::printf("\t\t%-*s | %s\n", max_name_length, filename_label.c_str(), "size");
 
-    for (const auto mapentry : speckage.file_info)
+    for (const auto& [name, data] : speckage.file_info)
     {
-        std::printf("%-*s | 0x%x\n", max_name_length, mapentry.first.c_str(), mapentry.second.second);
+        std::printf("\t\t%-*s | 0x%x\n", max_name_length, name.c_str(), data.length);
     }
-    return speckage;
 }
 
-void unspeck(const speck::speckage& speckage, std::filesystem::path output_dir)
+void unspeck(const speck::speckage_read_info& speckage, std::filesystem::path output_dir)
 {
     std::printf("\n\nUnspecking into %s...\n", output_dir.c_str());
 
@@ -78,6 +72,7 @@ void unspeck(const speck::speckage& speckage, std::filesystem::path output_dir)
         std::ofstream file(save_file, std::ios::out | std::ios::binary | std::ios::trunc);
         file.write(location, size);
         file.close();
+        speck::speck_free(location);
     }
 }
 
@@ -88,12 +83,12 @@ int main(int argc, char* argv[])
     std::string                        out_speckage_name = "";
     bool                               output_is_set     = false;
     std::filesystem::path              output_file;
-    bool                               should_append               = false;
-    bool                               skip_append_security_footer = false;
-    bool                               read_mode                   = false;
+    bool                               should_append = false;
+    bool                               read_mode     = false;
     std::filesystem::path              read_file;
     bool                               force_forward_slash = false;
     bool                               force_backslash     = false;
+    bool                               verbose             = false;
 
     cag_option_context                 context;
     cag_option_init(&context, options, CAG_ARRAY_SIZE(options), argc, argv);
@@ -112,8 +107,8 @@ int main(int argc, char* argv[])
             should_append = true;
             break;
         }
-        case 's': {
-            skip_append_security_footer = true;
+        case 'v': {
+            verbose = true;
             break;
         }
         case 'r':
@@ -173,38 +168,23 @@ int main(int argc, char* argv[])
     // read speckage to output
     if (read_mode)
     {
-        if (!should_append)
+        // standalone speckages can be read like appended speckages
+        auto speckages = speck::read_speckages_from_file(read_file);
+        printf("found the following %lu speckages:\n", speckages.size());
+        for (const auto& speckage : speckages)
         {
-            // single speckage file
-            auto speckage = read_speckage(read_file);
-            if (output_is_set)
-            {
-                unspeck(speckage, output_file);
-            }
-            speck::unload_speckage(speckage);
-            return EXIT_SUCCESS;
-        } else
-        {
-            // appended speckages
-            auto                     speckages_infos = speck::discover_appended_speckages(read_file.string());
-            std::vector<std::string> speckage_names;
-            printf("found the following %i speckages:\n", speckages_infos.speckage_offset_map.size());
-            for (const auto& [key, val] : speckages_infos.speckage_offset_map)
-            {
-                printf("\t-%s\n", key.c_str());
-                speckage_names.push_back(key);
-            }
-            auto speckages = speck::read_appended_speckages_from_file(speckage_names, speckages_infos);
-            if (output_is_set)
-            {
-                for (const auto& speckage : speckages)
-                {
-                    unspeck(speckage, output_file / speckage.name);
-                }
-            }
-
-            return EXIT_SUCCESS;
+            printf("\t-%s\n", speckage.name.c_str());
+            if (verbose)
+                print_speckage(speckage);
         }
+        if (output_is_set)
+        {
+            for (const auto& speckage : speckages)
+            {
+                unspeck(speckage, output_file / speckage.name);
+            }
+        }
+        return EXIT_SUCCESS;
     }
 
     // gather all files in a vector
@@ -235,7 +215,7 @@ int main(int argc, char* argv[])
     // specking mode
     if (!should_append)
     {
-        speck::speckage speckage;
+        speck_write::speckage_for_write speckage;
         speckage.min_memory_on_expand = 0;
         for (const auto& filepath : input_files)
         {
@@ -262,32 +242,33 @@ int main(int argc, char* argv[])
                 std::ranges::replace(path, '/', '\\');
             if (force_forward_slash)
                 std::ranges::replace(path, '\\', '/');
-            if (!speck::add_file_to_speckage(speckage, path))
+            if (!speck_write::add_file_to_speckage(speckage, path))
             {
                 std::cout << "[ERROR] " << path << " could not be specked" << std::endl;
                 return EXIT_FAILURE;
             }
         }
 
-        speck::save_speckage_to_file(speckage, output_file.string());
+        speck_write::save_speckage_to_file(speckage, output_file.string());
         return EXIT_SUCCESS;
     }
 
     // append mode
     if (should_append)
     {
-        std::vector<speck::speckage> speckages;
         for (const auto& file : input_files)
         {
-            speck::speckage read = speck::read_speckage_from_file(file.string());
-            if (read.data_size > 0)
+            std::vector<speck::speckage_read_info> read = speck::read_speckages_from_file(file);
+            if (read.empty())
+                std::cout << "[WARNING] "<< file << " does not contain any valid speckages. skipping." << std::endl;
+            if (read.size() > 1)
             {
-                speckages.push_back(read);
+                std::cout << "[WARNING] "<< file << " contains multiple speckages. all are added." << std::endl;
             }
-        }
-        if (!speck::append_speckages_to_file(speckages, output_file.string(), !skip_append_security_footer))
-        {
-            return EXIT_FAILURE;
+            if (!speck_write::append_speckages_to_file(read, output_file))
+            {
+                return EXIT_FAILURE;
+            }
         }
         return EXIT_SUCCESS;
     }
